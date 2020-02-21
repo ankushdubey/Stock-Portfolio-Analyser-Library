@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -47,7 +48,8 @@ public class PortfolioManagerApplication {
 
   public static List<String> mainReadFile(String[] args) throws IOException, URISyntaxException {
     List<String> l=debugOutputs();
-    byte[] jsonData = Files.readAllBytes(Paths.get("/home/crio-user/workspace/ankush-kv-ME_QMONEY/qmoney/bin/main/trades.json"));
+    List<String> l2=new ArrayList<String>();
+    byte[] jsonData = Files.readAllBytes(Paths.get(l.get(1)));
 
     //create ObjectMapper instance
     ObjectMapper objectMapper = new ObjectMapper();
@@ -59,9 +61,10 @@ public class PortfolioManagerApplication {
     while(elements.hasNext())
     {
       JsonNode temp = elements.next();
-      l.add(temp.asText());
+      System.out.println(temp.asText());
+      l2.add(temp.asText());
     }
-    return l;
+    return l2;
   }
 
 
