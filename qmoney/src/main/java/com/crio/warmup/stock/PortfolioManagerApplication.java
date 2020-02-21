@@ -5,6 +5,7 @@ package com.crio.warmup.stock;
 import com.crio.warmup.stock.dto.AnnualizedReturn;
 import com.crio.warmup.stock.dto.PortfolioTrade;
 import com.crio.warmup.stock.log.UncaughtExceptionHandler;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.File;
@@ -17,6 +18,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -44,8 +46,22 @@ public class PortfolioManagerApplication {
   //  There can be few unused imports, you will need to fix them to make the build pass.
 
   public static List<String> mainReadFile(String[] args) throws IOException, URISyntaxException {
+    List<String> l=debugOutputs();
+    byte[] jsonData = Files.readAllBytes(Paths.get("/home/crio-user/workspace/ankush-kv-ME_QMONEY/qmoney/bin/main/trades.json"));
 
-     return Collections.emptyList();
+    //create ObjectMapper instance
+    ObjectMapper objectMapper = new ObjectMapper();
+
+    //read JSON like DOM Parser
+    JsonNode symbols = objectMapper.readTree(jsonData);
+    JsonNode idNode = symbols.path("symbol");
+    Iterator<JsonNode> elements = idNode.elements();
+    while(elements.hasNext())
+    {
+      JsonNode temp = elements.next();
+      l.add(temp.asText());
+    }
+    return l;
   }
 
 
@@ -104,10 +120,10 @@ public class PortfolioManagerApplication {
   public static List<String> debugOutputs() {
 
      String valueOfArgument0 = "trades.json";
-     String resultOfResolveFilePathArgs0 = "";
-     String toStringOfObjectMapper = "";
-     String functionNameFromTestFileInStackTrace = "";
-     String lineNumberFromTestFileInStackTrace = "";
+     String resultOfResolveFilePathArgs0 = "/home/crio-user/workspace/ankush-kv-ME_QMONEY/qmoney/bin/main/trades.json";
+     String toStringOfObjectMapper = "com.fasterxml.jackson.databind.ObjectMapper@5a9d6f02";
+     String functionNameFromTestFileInStackTrace = "mainReadFile()";
+     String lineNumberFromTestFileInStackTrace = "22";
 
 
     return Arrays.asList(new String[]{valueOfArgument0, resultOfResolveFilePathArgs0,
