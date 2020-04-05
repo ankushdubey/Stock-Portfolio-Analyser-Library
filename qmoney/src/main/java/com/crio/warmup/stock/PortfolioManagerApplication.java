@@ -1,7 +1,10 @@
 
 package com.crio.warmup.stock;
 
+import com.crio.warmup.stock.dto.AnnualizedReturn;
 import com.crio.warmup.stock.dto.PortfolioTrade;
+import com.crio.warmup.stock.dto.TiingoCandle;
+import com.crio.warmup.stock.dto.TotalReturnsDto;
 import com.crio.warmup.stock.log.UncaughtExceptionHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -10,13 +13,22 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
+import javax.management.RuntimeErrorException;
+
+import org.apache.commons.math3.exception.NullArgumentException;
 import org.apache.logging.log4j.ThreadContext;
+import org.springframework.util.comparator.Comparators;
+import org.springframework.web.client.RestTemplate;
 
 public class PortfolioManagerApplication {
 
@@ -40,7 +52,7 @@ public class PortfolioManagerApplication {
 
     File file = resolveFileFromResources(args[0]);
     byte[] byteArray = Files.readAllBytes(file.toPath());
-    String content = new String(byteArray,"UTF-8");
+    String content = new String(byteArray, "UTF-8");
     ObjectMapper mapper = getObjectMapper();
     PortfolioTrade[] trade = mapper.readValue(content, PortfolioTrade[].class);
 
@@ -111,16 +123,97 @@ public class PortfolioManagerApplication {
     String functionNameFromTestFileInStackTrace = "mainReadFile()";
     String lineNumberFromTestFileInStackTrace = "22";
 
-    return Arrays.asList(new String[] { valueOfArgument0, resultOfResolveFilePathArgs0, 
+    return Arrays.asList(new String[] { valueOfArgument0, resultOfResolveFilePathArgs0,
         toStringOfObjectMapper,
         functionNameFromTestFileInStackTrace, lineNumberFromTestFileInStackTrace });
+  }
+  // TODO: CRIO_TASK_MODULE_REST_API
+  // Copy the relavent code from #mainReadFile to parse the Json into
+  // PortfolioTrade list.
+  // Now That you have the list of PortfolioTrade already populated in module#1
+  // For each stock symbol in the portfolio trades,
+  // Call Tiingo api
+  // (https://api.tiingo.com/tiingo/daily/<ticker>/prices?startDate=&endDate=&token=)
+  // with
+  // 1. ticker = symbol in portfolio_trade
+  // 2. startDate = purchaseDate in portfolio_trade.
+  // 3. endDate = args[1]
+  // Use RestTemplate#getForObject in order to call the API,
+  // and deserialize the results in List<Candle>
+  // Note - You may have to register on Tiingo to get the api_token.
+  // Please refer the the module documentation for the steps.
+  // Find out the closing price of the stock on the end_date and
+  // return the list of all symbols in ascending order by its close value on
+  // endDate
+  // Test the function using gradle commands below
+  // ./gradlew run --args="trades.json 2020-01-01"
+  // ./gradlew run --args="trades.json 2019-07-01"
+  // ./gradlew run --args="trades.json 2019-12-03"
+  // And make sure that its printing correct results.
+
+  public static List<String> mainReadQuotes(String[] args) throws IOException, URISyntaxException {
+    File file = resolveFileFromResources(args[0]);
+    byte[] byteArray = Files.readAllBytes(file.toPath());
+    String content = new String(byteArray, "UTF-8");
+    ObjectMapper mapper = getObjectMapper();
+    PortfolioTrade[] trade = mapper.readValue(content, PortfolioTrade[].class);
+    LocalDate endDate = LocalDate.parse(args[1]);
+    
+    String token = "56bbbb5b8742db40dc0fc572dae6789c5546fbd2";
+    String uri = "https://api.tiingo.com/tiingo/daily/$SYMBOL/prices?startDate=$STARTDATE&endDate=$ENDDATE&token=$APIKEY";
+
+    Double closingprice = 0.0;
+    List<TotalReturnsDto> totalReturn = new ArrayList<>();
+    for (PortfolioTrade trades : trade) {
+      String url = uri.replace("$APIKEY", token).replace("$SYMBOL", trades.getSymbol())
+          .replace("$STARTDATE", 
+            trades.getPurchaseDate().toString()).replace("$ENDDATE", endDate.toString());
+      
+      if (trades.getPurchaseDate().compareTo(endDate) > 0) {
+        throw new RuntimeErrorException(null);
+      }
+      TiingoCandle[] tiingoCandles;
+      List<LocalDate> date = new ArrayList<>();
+      try {
+        tiingoCandles = new RestTemplate().getForObject(url, TiingoCandle[].class);
+        if (tiingoCandles.length == 0) {
+          throw new NullPointerException();
+        }
+      } catch (NullPointerException e) {
+        return null;
+      }
+        
+      for (TiingoCandle tingoo : tiingoCandles) {
+        date.add(tingoo.getDate());
+      }
+      
+      LocalDate last = date.get(date.size() - 1);
+      for (TiingoCandle tingoo : tiingoCandles) {
+        if (tingoo.getDate() == last) {
+          closingprice = tingoo.getClose();
+        }
+      }
+      //System.out.println(trades.getQuantity());
+      TotalReturnsDto totalReturnTemp = new TotalReturnsDto(trades.getSymbol(), closingprice);
+      totalReturn.add(totalReturnTemp);
+    }
+    
+    Collections.sort(totalReturn, Comparator.comparing(TotalReturnsDto::getClosingPrice));
+    
+    List<String> answer = new ArrayList<>();
+    for (TotalReturnsDto val : totalReturn) {
+      answer.add(val.getSymbol());
+    }
+    return answer;
   }
 
   public static void main(String[] args) throws Exception {
     Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler());
     ThreadContext.put("runId", UUID.randomUUID().toString());
 
-    printJsonObject(mainReadFile(args));
+    //printJsonObject(mainReadFile(args));
+
+    printJsonObject(mainReadQuotes(args));
 
   }
 }
