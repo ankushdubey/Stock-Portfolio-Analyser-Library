@@ -272,6 +272,8 @@ public class PortfolioManagerApplication {
       annualizedReturns.add(calculateAnnualizedReturns(last,
           trades, openingprice, closingprice));
     }
+    Collections.sort(annualizedReturns, 
+        Collections.reverseOrder(Comparator.comparing(AnnualizedReturn::getAnnualizedReturn)));
     return annualizedReturns;
   }
 
