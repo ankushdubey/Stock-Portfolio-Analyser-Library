@@ -131,10 +131,11 @@ public class PortfolioManagerImpl implements PortfolioManager {
   public List<Candle> getStockQuote(String symbol, LocalDate from, LocalDate to)
       throws JsonProcessingException {
       String uri = buildUri(symbol, from, to);
+      
       Candle[] candles;
       try {
         candles = restTemplate.getForObject(uri, Candle[].class);
-        if (candles.length == 0) {
+        if (candles == null) {
           throw new NullPointerException();
         }
       } catch (NullPointerException e) {
@@ -144,13 +145,13 @@ public class PortfolioManagerImpl implements PortfolioManager {
   }
 
   protected String buildUri(String symbol, LocalDate startDate, LocalDate endDate) {
-       String uri = "https://api.tiingo.com/tiingo/daily/$SYMBOL/prices?"
-            + "startDate=$STARTDATE&endDate=$ENDDATE&token=$APIKEY";
        String token = "56bbbb5b8742db40dc0fc572dae6789c5546fbd2";
-
-       String url = uri.replace("$APIKEY", token).replace("$SYMBOL", symbol)
+       String uri = "https://api.tiingo.com/tiingo/daily/$SYMBOL/prices?startDate=$STARTDATE&endDate=$ENDDATE&token=$APIKEY";
+       String url = uri.replace("$SYMBOL", symbol)
             .replace("$STARTDATE", startDate.toString())
-              .replace("$ENDDATE", endDate.toString());
+              .replace("$ENDDATE", endDate.toString()).replace("$APIKEY", token.toString());
+       System.out.println(url);
+      
         return url;
   }
 }

@@ -32,6 +32,7 @@ import javax.management.RuntimeErrorException;
 import org.apache.commons.math3.exception.NullArgumentException;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.util.comparator.Comparators;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 
 
@@ -62,7 +63,6 @@ public class PortfolioManagerApplication {
     String content = new String(byteArray, "UTF-8");
     ObjectMapper mapper = getObjectMapper();
     PortfolioTrade[] trade = mapper.readValue(content, PortfolioTrade[].class);
-
     List<String> symbols = new ArrayList<>();
     for (int i = 0; i < trade.length; i++) {
       symbols.add(trade[i].getSymbol());
@@ -188,7 +188,7 @@ public class PortfolioManagerApplication {
         }
       } catch (NullPointerException e) {
         return null;
-      }
+      } 
       for (TiingoCandle tingoo : tiingoCandles) {
         date.add(tingoo.getDate());
       }
